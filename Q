@@ -1,0 +1,40 @@
+# Define variantImport function with the following arguments: url and filename
+variantImport <- function(url, filename) {
+  
+  # 1st: Name the zip file through the paste0() function
+  zipFileName <- paste0("downloaded_data.zip")
+  
+  # 2nd: Download the file from the URL and save it locally
+  download.file(url, zipFileName, mode = "wb")
+  
+  # 3rd: Unzip and extract the file
+  unzip(zipFileName)
+  
+  # 4th: Load CSV file within the zip file
+  data <- read.csv(filename, stringsAsFactors = FALSE)
+  
+  # 5th: Filter rows containing "Pahal" in the 'gene' column
+  data <- data[grepl("Pahal", data$gene), ]
+  
+  # 6th: Extract numeric positions from 'pos' column using regular expressions
+  pos_numbers <- regmatches(data$pos, gregexpr("[0-9]+", data$pos))
+  
+  # 7th: Assign 'begPos' and 'endPos' based on extracted numbers
+  data$begPos <- sapply(pos_numbers, function(x) as.numeric(x[1]))
+  data$endPos <- sapply(pos_numbers, function(x) {
+    if (length(x) >= 2) {
+      return(as.numeric(x[2]))
+    } else {
+      return(as.numeric(x[1]))
+    }
+  })
+  
+  # 8th: Verify that 'begPos' and 'endPos' are numeric and without missing values
+  data <- data[!is.na(data$begPos) & !is.na(data$endPos), ]
+  
+  # 9th: Reorder data by 'chrom', 'begPos', and 'endPos'
+  data <- data[order(data$chrom, data$begPos, data$endPos), ]
+  
+  # 10th: Return updated data frame
+  return(data)
+}
